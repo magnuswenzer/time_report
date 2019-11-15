@@ -1,0 +1,25 @@
+project_nr	project_name	ksts	hours_total
+1031821	Administration		320
+1713101	F SHARK	31741	50
+164205	EMODnet Chemistry 3	31906	120
+164204	EMODnet Data Ingestion		80
+192013	Allmänhetens oceanograf		40
+190003	Arbetsmiljö		40
+	Klämdagar		24
+192007	Rättning av data		20
+190007	Svea		20
+	Komp		16
+192009	GISMO		10
+	Kustmätsystem		8
+160601	Datavärdskap		
+151555	Forskningsfartyg drift eventhanteraren		
+160663	Klassningsverktyg		
+	PU- och lönesamtal		
+	Semester		
+	Totaltid		
+1723100	U SHARK	31791	250
+191001	Utsjön	31811	
+151120	SDC		
+151139	Bonus Integral		
+	Föräldraledig		
+1163410	OCSY	31401	
