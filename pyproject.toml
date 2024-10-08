@@ -1,0 +1,23 @@
+[project]
+name = "time_report"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "magnuswenzer", email = "magnus@wenzer.se"},
+]
+dependencies = [
+    "sqlmodel>=0.0.22",
+    "flet>=0.24.1",
+    "flet-contrib>=2024.3.6",
+]
+requires-python = ">=3.12"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
+[tool.pdm]
+distribution = true
