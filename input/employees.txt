@@ -1,4 +1,0 @@
-employee_nr	first_name	last_name	department
-1	Magnus	Wenzer	Shd
-2	Per-Erik	Bäckvall	Shd
-3	Kenny	Rogers	Shl
