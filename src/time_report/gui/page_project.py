@@ -27,12 +27,12 @@ class PageProject(ft.Column):
 
     def load_projects_from_database(self):
         for proj in database.get_projects():
-            pc = ProjectCard(callback_delete=self._on_delete_project, project=proj)
+            pc = ProjectCard(callback_delete=self._on_delete_project, project=proj, main_app=self.main_app)
             self.grid_view.controls.append(pc)
             self.grid_view.update()
 
     def _on_add_project(self, e=None) -> None:
-        self.grid_view.controls.append(ProjectCard(callback_delete=self._on_delete_project))
+        self.grid_view.controls.append(ProjectCard(callback_delete=self._on_delete_project, main_app=self.main_app))
         self.grid_view.update()
 
     def _on_delete_project(self, proj: "ProjectControl"):
@@ -53,3 +53,7 @@ class PageProject(ft.Column):
         self.grid_view.controls.remove(proj)
         self.grid_view.update()
         self.page.close(self._dlg_modal)
+        self.main_app.update_pages()
+
+    def update_page(self) -> None:
+        pass

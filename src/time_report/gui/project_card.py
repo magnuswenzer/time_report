@@ -20,11 +20,12 @@ def get_str(value: int | None | str) -> str:
 
 class ProjectCard(ft.Card):
 
-    def __init__(self, callback_delete: Callable, project: Project = None):
+    def __init__(self, callback_delete: Callable, project: Project = None, main_app=None):
         super().__init__()
         self.proj: Project | None = None
         self.isolated = True
         self._color = None
+        self.main_app = main_app
 
         self._callback_delete = callback_delete
 
@@ -96,6 +97,7 @@ class ProjectCard(ft.Card):
 
             self.proj = obj
         database.add_object(self.proj)
+        self.main_app.update_pages()
         self._set_view_mode()
 
     def _delete(self, *args):

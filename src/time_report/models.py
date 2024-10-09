@@ -12,6 +12,7 @@ class Project(SQLModel, table=True):
     kst: int | None
     hours_in_plan: int | None
     color: str | None
+    comment: str = Field(default='')
 
     timelogs: list["TimeLog"] = Relationship(back_populates="project")
     timesubmits: list["TimeSubmit"] = Relationship(back_populates="project")
@@ -21,6 +22,7 @@ class TimeLog(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     time_start: datetime.datetime
     time_stop: datetime.datetime | None
+    manual: bool = Field(default=False)
 
     project_id: int = Field(foreign_key="project.id")
     project: Project = Relationship(back_populates="timelogs")
