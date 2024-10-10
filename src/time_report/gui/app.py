@@ -7,6 +7,8 @@ import flet as ft
 
 from time_report.gui.page_log_time import PageLogTime
 from time_report.gui.page_project import PageProject
+from time_report.gui.page_week_report import PageWeekReport
+from time_report.gui.page_day_report import PageDayReport
 from time_report.models import Project
 from time_report import database
 
@@ -39,14 +41,17 @@ class TimeReportApp(ft.Column):
             title=self._dialog_text
         )
 
-        self._info_text = ft.Text('TEST')
+        self._info_text = ft.Text('Väkommen!')
 
         self.page_log_time = PageLogTime(self)
         self.page_project = PageProject(self)
+        self.page_day_report = PageDayReport(self)
+        self.page_week_report = PageWeekReport(self)
 
         self._tabs = ft.Tabs(
             selected_index=1,
             animation_duration=300,
+            on_change=self._on_change_tab,
             tabs=[
                 ft.Tab(
                     text="Logga tid",
@@ -58,6 +63,17 @@ class TimeReportApp(ft.Column):
                     icon=ft.icons.NOTE,
                     content=self.page_project,
                 ),
+                ft.Tab(
+                    text="Dagens arbete",
+                    icon=ft.icons.VIEW_DAY,
+                    content=self.page_day_report,
+                ),
+                ft.Tab(
+                    text="Veckans arbete",
+                    icon=ft.icons.CALENDAR_VIEW_WEEK,
+                    content=self.page_week_report,
+                ),
+
             ],
             expand=1, expand_loose=True
         )
@@ -79,9 +95,16 @@ class TimeReportApp(ft.Column):
         self._info_text.value = text
         self._info_text.update()
 
+    def _on_change_tab(self, *args):
+        if self._tabs.selected_index == 2:
+            self.page_day_report.update_page()
+        elif self._tabs.selected_index == 3:
+            self.page_week_report.update_page()
+
     def update_pages(self) -> None:
         self.page_project.update_page()
         self.page_log_time.update_page()
+        self.page_week_report.update_page()
 
 
 def main(page: ft.Page):

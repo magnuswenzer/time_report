@@ -1,7 +1,7 @@
 import datetime
 
 import flet as ft
-from time_report import database
+from time_report import database, controller
 from time_report.models import TimeLog
 
 
@@ -12,8 +12,6 @@ class ManualLogTime(ft.Row):
         self.main_app = main_app
 
         self._input_col = ft.Column()
-
-        self._proj_name_mapping = {}
 
         self._project_dropdown = ft.Dropdown(
             label="Projekt",
@@ -56,10 +54,8 @@ class ManualLogTime(ft.Row):
 
     def _update_project_dropdown(self, update: bool = True) -> None:
         options = []
-        self._proj_name_mapping = {}
         for proj in database.get_projects():
             options.append(ft.dropdown.Option(proj.name))
-            self._proj_name_mapping[proj.name] = proj
         self._project_dropdown.options = options
         if update:
             self._project_dropdown.update()
@@ -69,7 +65,7 @@ class ManualLogTime(ft.Row):
         self._btn_pick_date.update()
 
     def _submit(self, e) -> None:
-        proj = self._proj_name_mapping.get(self._project_dropdown.value)
+        proj = database.get_project(self._project_dropdown.value)
         if not proj:
             self.main_app.show_info('Inget projekt valt!')
             return
@@ -77,16 +73,13 @@ class ManualLogTime(ft.Row):
             self.main_app.show_info('Ingen tid angiven!')
             return
         self.main_app.show_info(f'Loggar {self._nr_minutes.value} minuter på {proj.name}')
-        end_time = self.datetime + datetime.timedelta(minutes=int(self._nr_minutes.value))
 
-        tlog = TimeLog(
-            time_start=self.datetime,
-            time_stop=end_time,
-            manual=True,
-            project=proj
-        )
-        database.add_object(tlog)
+        controller.add_manual_time_to_project(proj, self.datetime, self._nr_minutes.value)
+
+        self._nr_minutes.value = ''
+        self._nr_minutes.update()
 
     def update_frame(self) -> None:
         self._update_project_dropdown()
+
 

@@ -22,6 +22,9 @@ class TimeLog(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     time_start: datetime.datetime
     time_stop: datetime.datetime | None
+    dt: datetime.timedelta | None
+    nr_hours: int | None
+    nr_minutes: int | None
     manual: bool = Field(default=False)
 
     project_id: int = Field(foreign_key="project.id")

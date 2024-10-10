@@ -2,6 +2,7 @@ import datetime
 
 from sqlmodel import Field, Session, SQLModel, create_engine, select, Relationship
 
+from time_report import utils
 from time_report.models import engine, Project, TimeLog
 
 
@@ -22,6 +23,19 @@ def add_objects(*args: SQLModel) -> None:
         session.commit()
 
 
+def get_project(name: str | int):
+    with Session(engine) as session:
+        if type(name) == str:
+            statement = select(Project).where(Project.name == name)
+        else:
+            statement = select(Project).where(Project.id == name)
+        results = session.exec(statement)
+        proj = results.first()
+        if not proj:
+            return
+        return proj
+
+
 def get_projects() -> list[Project]:
     with Session(engine) as session:
         statement = select(Project)
@@ -30,38 +44,42 @@ def get_projects() -> list[Project]:
 
 def get_time_logs_for_project(proj: Project) -> list[TimeLog]:
     with Session(engine) as session:
-        statement = select(TimeLog).where(TimeLog.project_id==proj.id)
+        statement = select(TimeLog).where(TimeLog.project_id == proj.id)
         return list(session.exec(statement))
 
 
-def add_sample_data():
+def get_time_logs_for_day(dtime: datetime.datetime):
+    start, end = utils.get_day_range(dtime)
     with Session(engine) as session:
-        admin = Project(name="Administration")
-        nodc = Project(name="NODC", hours_in_plan=350)
-        ifcb = Project(name="IFCB")
-        session.add(admin)
-        session.add(nodc)
-        session.add(ifcb)
-        session.commit()
-
-        session.refresh(admin)
-        session.refresh(nodc)
-        session.refresh(ifcb)
-
-        pasta = ItemType(name="pasta", manufacturer='barilla', category=food)
-        krossad_tomat = ItemType(name="krossad tomat", manufacturer='ica', category=food)
-        train = ItemType(name="tågbana", manufacturer='brio', category=toys)
-        session.add(pasta)
-        session.add(krossad_tomat)
-        session.add(train)
-        session.commit()
+        statement = select(TimeLog).where(TimeLog.time_start >= start,
+                                          TimeLog.time_start <= end)
+        return list(session.exec(statement))
 
 
-if __name__ == "__main__":
-    create_db_and_tables()
-
+def get_project_time_logs_for_day(proj: Project, dtime: datetime.datetime):
+    start, end = utils.get_day_range(dtime)
     with Session(engine) as session:
-        statement = select(Project)
+        statement = select(TimeLog).where(TimeLog.project_id == proj.id,
+                                          TimeLog.time_start >= start,
+                                          TimeLog.time_start <= end)
+        return list(session.exec(statement))
+
+
+def get_project_time_logs_for_week(proj: Project, week_number: int | str):
+    start, end = utils.get_week_range(week_number)
+    with Session(engine) as session:
+        statement = select(TimeLog).where(TimeLog.project_id == proj.id,
+                                          TimeLog.time_start >= start,
+                                          TimeLog.time_start <= end)
+        return list(session.exec(statement))
+
+
+def get_running_time_log() -> TimeLog | None:
+    with Session(engine) as session:
+        statement = select(TimeLog).where(TimeLog.time_stop == None)
         results = session.exec(statement)
-        for proj in results:
-            print(type(proj), proj)
+        tlog = results.first()
+        if not tlog:
+            return
+        return tlog
+
