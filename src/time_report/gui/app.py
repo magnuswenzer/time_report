@@ -9,6 +9,7 @@ from time_report.gui.page_log_time import PageLogTime
 from time_report.gui.page_project import PageProject
 from time_report.gui.page_week_report import PageWeekReport
 from time_report.gui.page_day_report import PageDayReport
+from time_report.gui.page_week_schedule import PageWeekSchedule
 from time_report.models import Project
 from time_report import database
 
@@ -47,6 +48,7 @@ class TimeReportApp(ft.Column):
         self.page_project = PageProject(self)
         self.page_day_report = PageDayReport(self)
         self.page_week_report = PageWeekReport(self)
+        self.page_week_schedule = PageWeekSchedule(self)
 
         self._tabs = ft.Tabs(
             selected_index=1,
@@ -72,6 +74,11 @@ class TimeReportApp(ft.Column):
                     text="Veckans arbete",
                     icon=ft.icons.CALENDAR_VIEW_WEEK,
                     content=self.page_week_report,
+                ),
+                ft.Tab(
+                    text="Veckoschema",
+                    icon=ft.icons.SCHEDULE,
+                    content=self.page_week_schedule,
                 ),
 
             ],
@@ -100,6 +107,8 @@ class TimeReportApp(ft.Column):
             self.page_day_report.update_page()
         elif self._tabs.selected_index == 3:
             self.page_week_report.update_page()
+        elif self._tabs.selected_index == 4:
+            self.page_week_schedule.update_page()
 
     def update_pages(self) -> None:
         self.page_project.update_page()

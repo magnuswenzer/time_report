@@ -3,7 +3,7 @@ import datetime
 from sqlmodel import Field, Session, SQLModel, create_engine, select, Relationship
 
 from time_report import utils
-from time_report.models import engine, Project, TimeLog
+from time_report.models import engine, Project, TimeLog, DateInfo
 
 
 def create_db_and_tables():
@@ -82,4 +82,15 @@ def get_running_time_log() -> TimeLog | None:
         if not tlog:
             return
         return tlog
+
+
+def get_dates_info(date_start: datetime.date = None, date_stop: datetime.date = None) -> list[DateInfo]:
+    with Session(engine) as session:
+        statement = select(DateInfo).where(TimeLog.time_stop == None)
+        if date_start:
+            statement = statement.where(DateInfo.date >= date_start)
+        if date_stop:
+            statement = statement.where(DateInfo.date <= date_stop)
+        return list(session.exec(statement))
+
 

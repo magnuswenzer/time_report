@@ -26,6 +26,7 @@ class TimeLog(SQLModel, table=True):
     nr_hours: int | None
     nr_minutes: int | None
     manual: bool = Field(default=False)
+    comment: str = Field(default='')
 
     project_id: int = Field(foreign_key="project.id")
     project: Project = Relationship(back_populates="timelogs")
@@ -35,9 +36,17 @@ class TimeSubmit(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     date: datetime.date
     nr_hours: int
+    comment: str = Field(default='')
 
     project_id: int = Field(foreign_key="project.id")
     project: Project = Relationship(back_populates="timesubmits")
+
+
+class DateInfo(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    date: datetime.date = Field(unique=True)
+    time_in_plan: datetime.timedelta
+    comment: str = Field(default='')
 
 
 home_dir = pathlib.Path().home() / 'time_report'
