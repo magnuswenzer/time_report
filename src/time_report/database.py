@@ -18,6 +18,8 @@ def add_object(obj: SQLModel) -> None:
 
 
 def add_objects(*args: SQLModel) -> None:
+    for arg in args:
+        print(f'{arg=}')
     with Session(engine) as session:
         session.add_all(args)
         session.commit()
@@ -84,13 +86,20 @@ def get_running_time_log() -> TimeLog | None:
         return tlog
 
 
+def get_date_info(date: datetime.date = None) -> DateInfo:
+    with Session(engine) as session:
+        statement = select(DateInfo).where(DateInfo.date == date)
+        results = session.exec(statement)
+        return results.first()
+
+
 def get_dates_info(date_start: datetime.date = None, date_stop: datetime.date = None) -> list[DateInfo]:
     with Session(engine) as session:
-        statement = select(DateInfo).where(TimeLog.time_stop == None)
+        statement = select(DateInfo)
         if date_start:
             statement = statement.where(DateInfo.date >= date_start)
         if date_stop:
             statement = statement.where(DateInfo.date <= date_stop)
-        return list(session.exec(statement))
+        return list(session.exec(statement.order_by(DateInfo.date)))
 
 

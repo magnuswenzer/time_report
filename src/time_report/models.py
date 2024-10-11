@@ -45,7 +45,9 @@ class TimeSubmit(SQLModel, table=True):
 class DateInfo(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     date: datetime.date = Field(unique=True)
-    time_in_plan: datetime.timedelta
+    time_in_plan: datetime.timedelta | None
+    week_day_number: int
+    non_working_day: bool = Field(default=False)
     comment: str = Field(default='')
 
 

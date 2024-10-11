@@ -1,7 +1,8 @@
 from time_report import database
-from time_report.models import Project, TimeLog
+from time_report.models import Project, TimeLog, DateInfo
 import datetime
 from time_report import utils
+
 
 def start_logging(proj: Project | str) -> None:
     stop_logging()
@@ -76,4 +77,67 @@ def _get_total_time_for_time_logs(tlogs: list[TimeLog], include_ongoing: bool = 
             dt = datetime.datetime.now() - tlog.time_start
         time_delta += dt
     return utils.TimeDelta(time_delta)
+
+
+def get_date_info(date: datetime.date) -> DateInfo:
+    date_stop = date
+    return database.get_dates_info(date, date_stop)[0]
+
+
+def get_dates_info(date_start: datetime.date | None = None, date_stop: datetime.date | None = None) -> list[DateInfo]:
+    return database.get_dates_info(date_start, date_stop)
+
+
+def set_info_for_dates(*lst: dict) -> None:
+    year = datetime.datetime.now().year
+    red_dates = utils.get_red_dates(year)
+    objs = []
+    for item in lst:
+        date = item['date']
+        if date.weekday() in [5, 6] or date in red_dates:
+            continue
+        info = database.get_date_info(date)
+        time_in_plan = datetime.timedelta(hours=item.get('nr_hours', 0))
+        info.time_in_plan = time_in_plan
+        objs.append(info)
+    database.add_objects(*objs)
+
+
+def set_week_info_from_date(date: datetime.date, *lst: dict) -> None:
+    mapping = {}
+    for item in lst:
+        mapping[item['date'].weekday()] = item
+    year = datetime.datetime.now().year
+    all_dates_info = []
+    while date.year == year:
+        mapped_date_info = mapping[date.weekday()]
+        date_info = dict(
+            date=date,
+            nr_hours=mapped_date_info.get('nr_hours', 0)
+        )
+        all_dates_info.append(date_info)
+        date = date + datetime.timedelta(days=1)
+    set_info_for_dates(*all_dates_info)
+
+
+def add_default_date_info() -> None:
+    if database.get_dates_info():
+        return
+    year = datetime.datetime.now().year
+    red_dates = utils.get_red_dates(year)
+    start_datetime = datetime.datetime(year, 1, 1)
+    dinfos = []
+    for d in range(366):
+        dtime = start_datetime + datetime.timedelta(days=d)
+        non_working_day = False
+        if dtime.weekday() in [5, 6] or dtime.date() in red_dates:
+            non_working_day = True
+        dinfo = DateInfo(
+            date=dtime.date(),
+            week_day_number=dtime.weekday(),
+            non_working_day=non_working_day,
+        )
+        dinfos.append(dinfo)
+    database.add_objects(*dinfos)
+
 

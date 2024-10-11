@@ -11,7 +11,7 @@ from time_report.gui.page_week_report import PageWeekReport
 from time_report.gui.page_day_report import PageDayReport
 from time_report.gui.page_week_schedule import PageWeekSchedule
 from time_report.models import Project
-from time_report import database
+from time_report import database, controller
 
 
 class TimeReportApp(ft.Column):
@@ -25,6 +25,7 @@ class TimeReportApp(ft.Column):
     #     self.page_project.load_projects_from_database()
 
     def startup(self):
+        controller.add_default_date_info()
         self.page_project.load_projects_from_database()
         self.page_log_time.update_page()
 

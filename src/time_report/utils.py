@@ -10,6 +10,8 @@ WEEKDAYS = [
     'Söndag'
 ]
 
+DATE_FORMAT = '%Y-%m-%d'
+
 
 class TimeDelta:
 
@@ -55,3 +57,30 @@ def get_day_range(dtime: datetime.datetime) -> list[datetime.datetime]:
     start_of_day = datetime.datetime(dtime.year, dtime.month, dtime.day)
     end_of_day = start_of_day + datetime.timedelta(days=1, seconds=-1)
     return [start_of_day, end_of_day]
+
+
+def get_red_dates(year: int) -> list[datetime.date]:
+    month_day = [
+        (1, 1),
+        (1, 6),
+        (3, 29),
+        (3, 30),
+        (3, 31),
+        (4, 1),
+        (5, 1),
+        (5, 9),
+        (5, 19),
+        (5, 20),
+        (6, 6),
+        (6, 21),
+        (6, 22),
+        (11, 2),
+        (12, 24),
+        (12, 25),
+        (12, 26),
+        (12, 31),
+    ]
+    date_lst = []
+    for m, d in month_day:
+        date_lst.append(datetime.datetime(year, m, d).date())
+    return date_lst
