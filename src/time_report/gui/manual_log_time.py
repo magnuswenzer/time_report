@@ -21,7 +21,8 @@ class ManualLogTime(ft.Row):
 
         self._date_picker = ft.DatePicker(
             first_date=datetime.datetime(year=datetime.datetime.now().year, month=1, day=1),
-            last_date=datetime.datetime(year=datetime.datetime.now().year, month=12, day=31),
+            last_date=datetime.datetime.now(),
+            #last_date=datetime.datetime(year=datetime.datetime.now().year, month=12, day=31),
             on_change=self._on_change_manual_date,
             confirm_text='Välj',
             cancel_text='Avbryt',
