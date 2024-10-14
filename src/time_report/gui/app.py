@@ -10,6 +10,7 @@ from time_report.gui.page_project import PageProject
 from time_report.gui.page_week_report import PageWeekReport
 from time_report.gui.page_day_report import PageDayReport
 from time_report.gui.page_week_schedule import PageWeekSchedule
+from time_report.gui.page_week_submit import PageWeekSubmit
 from time_report.models import Project
 from time_report import database, controller
 
@@ -50,6 +51,7 @@ class TimeReportApp(ft.Column):
         self.page_day_report = PageDayReport(self)
         self.page_week_report = PageWeekReport(self)
         self.page_week_schedule = PageWeekSchedule(self)
+        self.page_week_submit = PageWeekSubmit(self)
 
         self._tabs = ft.Tabs(
             selected_index=1,
@@ -81,6 +83,11 @@ class TimeReportApp(ft.Column):
                     icon=ft.icons.SCHEDULE,
                     content=self.page_week_schedule,
                 ),
+                ft.Tab(
+                    text="Rapportera tid",
+                    icon=ft.icons.REPORT,
+                    content=self.page_week_submit,
+                ),
 
             ],
             expand=1, expand_loose=True
@@ -110,6 +117,8 @@ class TimeReportApp(ft.Column):
             self.page_week_report.update_page()
         elif self._tabs.selected_index == 4:
             self.page_week_schedule.update_page()
+        elif self._tabs.selected_index == 5:
+            self.page_week_submit.update_page()
 
     def update_pages(self) -> None:
         self.page_project.update_page()

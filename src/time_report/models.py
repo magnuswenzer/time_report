@@ -35,7 +35,7 @@ class TimeLog(SQLModel, table=True):
 class TimeSubmit(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     date: datetime.date
-    nr_hours: int
+    submitted_time: datetime.timedelta
     comment: str = Field(default='')
 
     project_id: int = Field(foreign_key="project.id")

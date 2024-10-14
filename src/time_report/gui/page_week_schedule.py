@@ -3,6 +3,7 @@ import datetime
 import flet as ft
 from time_report import database, controller
 from time_report import utils
+from time_report.gui import week_selection
 
 
 class PageWeekSchedule(ft.Column):
@@ -38,24 +39,7 @@ class PageWeekSchedule(ft.Column):
             ft.ElevatedButton('Sätt alla veckor', on_click=self._apply_to_all_weeks),
         ])
 
-        options = []
-        for w in range(1, 54):
-            options.append(ft.dropdown.Option(str(w)))
-
-        self._week_dropdown = ft.Dropdown(
-            label="Vecka",
-            hint_text="Välj en vecka",
-            autofocus=False,
-            on_change=self._on_change_week,
-            options=options
-        )
-
-        self._week_dropdown.value = datetime.datetime.now().strftime('%W')
-
-        week_row = ft.Row([
-            self._week_dropdown,
-            ft.ElevatedButton('Gå till den här veckan', on_click=self._goto_this_week)
-        ])
+        self.week_selection = week_selection.WeekSelection(callback_change_week=self._on_change_week)
 
         dates_col = ft.Column()
 
@@ -65,7 +49,7 @@ class PageWeekSchedule(ft.Column):
             ]))
 
         self.controls = [
-            week_row,
+            self.week_selection,
             ft.Row([
                 dates_col,
                 button_col
@@ -74,16 +58,11 @@ class PageWeekSchedule(ft.Column):
 
     @property
     def week(self) -> int:
-        return int(self._week_dropdown.value)
+        return int(self.week_selection.value)
 
     @property
-    def week_dates(self) -> list[datetime.datetime]:
+    def week_dates(self) -> list[datetime.date]:
         return utils.get_week_dates(self.week)
-
-    def _goto_this_week(self, *args):
-        self._week_dropdown.value = datetime.datetime.now().strftime('%W')
-        self._week_dropdown.update()
-        self._on_change_week()
 
     def _on_change_week(self, *args):
         self._update_dates()
@@ -96,7 +75,10 @@ class PageWeekSchedule(ft.Column):
 
     def _update_date_info(self):
         wdates = self.week_dates
-        dinfos = controller.get_dates_info(wdates[0].date(), wdates[-1].date())
+        print(f'{wdates=}')
+        print(f'{self._dates=}')
+        dinfos = controller.get_dates_info(wdates[0], wdates[-1])
+        print(f'{dinfos=}')
         for date, field, info in zip(self._dates, self._weekday_fields, dinfos):
             field.value = ''
             date.color = 'primary'

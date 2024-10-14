@@ -1,5 +1,5 @@
 from time_report import database
-from time_report.models import Project, TimeLog, DateInfo
+from time_report.models import Project, TimeLog, DateInfo, TimeSubmit
 import datetime
 from time_report import utils
 
@@ -44,8 +44,16 @@ def add_manual_time_to_project(proj: Project, time_start: datetime.datetime, nr_
         )
     database.add_object(tlog)
 
+
 def get_total_time_for_day(dtime: datetime.datetime, include_ongoing: bool = True) -> utils.TimeDelta | None:
     tlogs = database.get_time_logs_for_day(dtime)
+    if not tlogs:
+        return None
+    return _get_total_time_for_time_logs(tlogs, include_ongoing=include_ongoing)
+
+
+def get_total_time_for_project(proj: Project, time_stop: datetime.date, include_ongoing: bool = True) -> utils.TimeDelta | None:
+    tlogs = database.get_project_time_logs(proj, time_stop)
     if not tlogs:
         return None
     return _get_total_time_for_time_logs(tlogs, include_ongoing=include_ongoing)
@@ -118,6 +126,33 @@ def set_week_info_from_date(date: datetime.date, *lst: dict) -> None:
         all_dates_info.append(date_info)
         date = date + datetime.timedelta(days=1)
     set_info_for_dates(*all_dates_info)
+
+
+def get_sum_of_scheduled_time(date_start: datetime.date = None, date_stop: datetime.date = None) -> datetime.timedelta:
+    infos = database.get_dates_info(date_start=date_start, date_stop=date_stop)
+    dt = datetime.timedelta()
+    for info in infos:
+        if not info.time_in_plan:
+            continue
+        dt += info.time_in_plan
+    return dt
+
+
+def get_sum_of_submitted_time(date_stop: datetime.date, proj: Project = None) -> datetime.timedelta:
+    subs = database.get_time_submits(date_stop=date_stop, proj=proj)
+    dt = datetime.timedelta()
+    for sub in subs:
+        if not sub.nr_hours:
+            continue
+        dt += sub.nr_hours
+    return dt
+
+
+def get_latest_submitted_time() -> TimeSubmit | None:
+    subs = database.get_time_submits()
+    if not subs:
+        return
+    return subs[-1]
 
 
 def add_default_date_info() -> None:

@@ -3,7 +3,7 @@ import datetime
 from sqlmodel import Field, Session, SQLModel, create_engine, select, Relationship
 
 from time_report import utils
-from time_report.models import engine, Project, TimeLog, DateInfo
+from time_report.models import engine, Project, TimeLog, DateInfo, TimeSubmit
 
 
 def create_db_and_tables():
@@ -58,6 +58,16 @@ def get_time_logs_for_day(dtime: datetime.datetime):
         return list(session.exec(statement))
 
 
+def get_project_time_logs(proj: Project, date_stop: datetime.date):
+    start = datetime.datetime(datetime.datetime.now().year, 1, 1)
+    _, end = utils.get_day_range(date_stop)
+    with Session(engine) as session:
+        statement = select(TimeLog).where(TimeLog.project_id == proj.id,
+                                          TimeLog.time_start >= start,
+                                          TimeLog.time_start <= end)
+        return list(session.exec(statement))
+
+
 def get_project_time_logs_for_day(proj: Project, dtime: datetime.datetime):
     start, end = utils.get_day_range(dtime)
     with Session(engine) as session:
@@ -96,10 +106,25 @@ def get_date_info(date: datetime.date = None) -> DateInfo:
 def get_dates_info(date_start: datetime.date = None, date_stop: datetime.date = None) -> list[DateInfo]:
     with Session(engine) as session:
         statement = select(DateInfo)
+        print(f'{date_start=}')
         if date_start:
             statement = statement.where(DateInfo.date >= date_start)
         if date_stop:
             statement = statement.where(DateInfo.date <= date_stop)
         return list(session.exec(statement.order_by(DateInfo.date)))
+
+
+def get_time_submits(date_start: datetime.date = None,
+                     date_stop: datetime.date = None,
+                     proj: Project = None) -> list[TimeSubmit]:
+    with Session(engine) as session:
+        statement = select(TimeSubmit)
+        if proj:
+            statement = statement.where(Project.id == proj.id)
+        if date_start:
+            statement = statement.where(TimeSubmit.date >= date_start)
+        if date_stop:
+            statement = statement.where(TimeSubmit.date <= date_stop)
+        return list(session.exec(statement.order_by(TimeSubmit.date)))
 
 
