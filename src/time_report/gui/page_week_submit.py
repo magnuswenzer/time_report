@@ -51,7 +51,7 @@ class PageWeekSubmit(ft.Column):
         self._update_week_days()
         self._update_header()
         self._update_hours_in_table()
-        #self._set_suggestion_in_fields() ###NEW
+        self._set_suggestion_in_fields() ###NEW
         self._on_change_field()
         self.update()
 
@@ -122,16 +122,23 @@ class PageWeekSubmit(ft.Column):
             for i, (d, field) in enumerate(self._fields[proj_name].items()):
                 if tot_sum == tot_scheduled_time:
                     break
+                if not hour_diff:
+                    continue
                 current_field_value_str = field.value or field.label
                 current_field_value = int(current_field_value_str or 0)
                 date = self.week_dates[i]
                 date_info = controller.get_date_info(date)
                 max_nr_hours = utils.TimeDelta(date_info.time_in_plan).hours
+                print()
+                print('='*100)
+                print(proj_name)
+                print('-'*100)
                 while current_field_value < max_nr_hours:
                     current_field_value += 1
                     field.value = str(current_field_value)
                     hour_diff -= 1
                     tot_sum += 1
+                    print(f'{proj_name=}  :  {hour_diff=}  :  {type(hour_diff)=}  :   {tot_sum=}  :  {current_field_value=}')
                     if not hour_diff:
                         break
                     if tot_sum == tot_scheduled_time:
