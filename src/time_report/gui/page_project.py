@@ -56,4 +56,5 @@ class PageProject(ft.Column):
         self.main_app.update_pages()
 
     def update_page(self) -> None:
-        pass
+        for pc in self.grid_view.controls:
+            pc.update_card()

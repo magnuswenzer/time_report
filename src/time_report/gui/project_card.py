@@ -2,7 +2,7 @@ from typing import Callable
 
 import flet as ft
 
-from time_report import database
+from time_report import database, controller
 from time_report.models import Project
 
 
@@ -29,7 +29,9 @@ class ProjectCard(ft.Card):
 
         self._callback_delete = callback_delete
 
-        self._hours_worked = ft.Text('test')
+        self._time_worked = ft.Text()
+        self._time_reported = ft.Text()
+        self._extra_time = ft.Text()
 
         color = 'green'
 
@@ -39,7 +41,9 @@ class ProjectCard(ft.Card):
         self._project_number = ft.TextField(label='Projektnummer', color=color)
         self._kst = ft.TextField(label='Kostnadsställe', color=color)
 
-        row_hours_worked = ft.Row([ft.Text('Arbetade timmar:'), self._hours_worked])
+        row_time_worked = ft.Row([ft.Text('Arbetad tid:'), self._time_worked])
+        row_time_reported = ft.Row([ft.Text('Rapporterad tid:'), self._time_reported])
+        row_extra_time = ft.Row([ft.Text('Extratid:'), self._extra_time])
 
         self._button_color = ft.ElevatedButton('Välj färg')
 
@@ -59,7 +63,9 @@ class ProjectCard(ft.Card):
             self._name,
             self._project_number,
             self._hours_in_plan,
-            row_hours_worked,
+            row_time_worked,
+            row_time_reported,
+            row_extra_time,
             self._kst,
             self._contact] )
 
@@ -147,12 +153,12 @@ class ProjectCard(ft.Card):
         self._kst.value = get_str(value)
 
     @property
-    def hours_worked(self) -> int:
-        return get_int_or_none(self._hours_worked.value)
+    def time_worked(self) -> int:
+        return get_int_or_none(self._time_worked.value)
 
-    @hours_worked.setter
-    def hours_worked(self, value: int):
-        self._hours_worked.value = get_str(value)
+    @time_worked.setter
+    def time_worked(self, value: int):
+        self._time_worked.value = get_str(value)
 
     def set_color(self, color: str):
         self._name.color = color
@@ -186,3 +192,16 @@ class ProjectCard(ft.Card):
         if update:
             self._fields.update()
             self._option_col.update()
+
+    def update_card(self):
+        latest_sub = controller.get_latest_submitted_time()
+        if not latest_sub:
+            return
+        dt_worked = controller.get_total_time_for_project(proj=self.proj, date_stop=latest_sub.date)
+        dt_reported = controller.get_sum_of_submitted_time(date_stop=latest_sub.date, proj=self.proj)
+        dt_extra = dt_worked - dt_reported
+
+        self._time_worked.value = f'{dt_worked.hours}:{str(dt_worked.minutes).zfill(2)}'
+        self._time_reported.value = f'{dt_reported.hours}:{str(dt_reported.minutes).zfill(2)}'
+        self._extra_time.value = f'{dt_extra.hours}:{str(dt_extra.minutes).zfill(2)}'
+        self.update()

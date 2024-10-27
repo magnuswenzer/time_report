@@ -52,8 +52,8 @@ def get_total_time_for_day(dtime: datetime.datetime, include_ongoing: bool = Tru
     return _get_total_time_for_time_logs(tlogs, include_ongoing=include_ongoing)
 
 
-def get_total_time_for_project(proj: Project, time_stop: datetime.date, include_ongoing: bool = True) -> utils.TimeDelta | None:
-    tlogs = database.get_project_time_logs(proj, time_stop)
+def get_total_time_for_project(proj: Project, date_stop: datetime.date, include_ongoing: bool = True) -> utils.TimeDelta:
+    tlogs = database.get_project_time_logs(proj, date_stop)
     if not tlogs:
         return None
     return _get_total_time_for_time_logs(tlogs, include_ongoing=include_ongoing)
@@ -138,14 +138,14 @@ def get_sum_of_scheduled_time(date_start: datetime.date = None, date_stop: datet
     return dt
 
 
-def get_sum_of_submitted_time(date_stop: datetime.date, proj: Project = None) -> datetime.timedelta:
-    subs = database.get_time_submits(date_stop=date_stop, proj=proj)
+def get_sum_of_submitted_time(date_start: datetime.date = None, date_stop: datetime.date = None, proj: Project = None) -> utils.TimeDelta:
+    subs = database.get_time_submits(date_start=date_start, date_stop=date_stop, proj=proj)
     dt = datetime.timedelta()
     for sub in subs:
-        if not sub.nr_hours:
+        if not sub.submitted_time:
             continue
-        dt += sub.nr_hours
-    return dt
+        dt += sub.submitted_time
+    return utils.TimeDelta(dt)
 
 
 def get_latest_submitted_time() -> TimeSubmit | None:
@@ -153,6 +153,40 @@ def get_latest_submitted_time() -> TimeSubmit | None:
     if not subs:
         return
     return subs[-1]
+
+
+def get_time_submit(proj_name: str, date: datetime.date):
+    proj = database.get_project(proj_name)
+    return database.get_time_submit(proj=proj, date=date)
+
+
+def submit_time(proj_name: str, date: datetime.date, nr_hours: int):
+    sub = get_time_submit(proj_name, date)
+    if sub and sub.is_reported:
+        raise Exception(f'Already reported with {sub.submitted_time} hours: {proj_name} ({date})')
+    dt = datetime.timedelta(hours=nr_hours)
+    if sub:
+        sub.submitted_time = dt
+    else:
+        proj = database.get_project(proj_name)
+        sub = database.TimeSubmit(
+            project=proj,
+            date=date,
+            submitted_time=dt
+        )
+    database.add_object(sub)
+
+
+def mark_as_reported(proj_name: str, date: datetime.date):
+    sub = get_time_submit(proj_name, date)
+    if not sub:
+        raise Exception(f'No submit found: {proj_name} ({date})')
+    if sub and sub.is_reported:
+        raise Exception(f'Already reported with {sub.submitted_time} hours: {proj_name} ({date})')
+    sub.is_reported = True
+    database.add_object(sub)
+
+
 
 
 def add_default_date_info() -> None:

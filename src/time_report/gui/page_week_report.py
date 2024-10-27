@@ -56,7 +56,9 @@ class PageWeekReport(ft.Column):
     def _update_hours_in_table(self):
         rows = []
         for proj in database.get_projects():
+            print(f'{self.week=}  :  {proj=}')
             week_td = controller.get_total_time_for_project_and_week(proj, self.week)
+            print(f'{week_td=  }')
             if not week_td:
                 continue
             cells = []

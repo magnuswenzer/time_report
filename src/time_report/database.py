@@ -114,11 +114,19 @@ def get_dates_info(date_start: datetime.date = None, date_stop: datetime.date = 
         return list(session.exec(statement.order_by(DateInfo.date)))
 
 
+def get_time_submit(date: datetime.date = None,
+                     proj: Project = None) -> TimeSubmit:
+    with Session(engine) as session:
+        statement = select(TimeSubmit).join(Project).where(Project.id == proj.id, TimeSubmit.date == date)
+        results = session.exec(statement)
+        return results.first()
+
+
 def get_time_submits(date_start: datetime.date = None,
                      date_stop: datetime.date = None,
                      proj: Project = None) -> list[TimeSubmit]:
     with Session(engine) as session:
-        statement = select(TimeSubmit)
+        statement = select(TimeSubmit).join(Project)
         if proj:
             statement = statement.where(Project.id == proj.id)
         if date_start:

@@ -19,7 +19,8 @@ class TimeDelta:
         self._dt = dt or datetime.timedelta()
 
     def __repr__(self):
-        return self._dt.__repr__()
+        return f'{self.hours}:{str(self.minutes).zfill(2)}'
+        # return self._dt.__repr__()
 
     def __add__(self, other):
         return TimeDelta(self._dt + other.dt)
@@ -27,10 +28,10 @@ class TimeDelta:
     def __sub__(self, other):
         return TimeDelta(self._dt - other.dt)
 
-    def _fix_sign(self, value: int) -> int:
-        if self._dt == self.dt:
-            return value
-        return -value
+    # def _fix_sign(self, value: int) -> int:
+    #     if self._dt == self.dt:
+    #         return value
+    #     return -value
 
     @property
     def dt(self) -> datetime.timedelta:
@@ -39,16 +40,13 @@ class TimeDelta:
         return self._dt
 
     @property
-    def seconds(self) -> int:
-        return self._fix_sign(self._dt.seconds)
-
-    @property
     def hours(self) -> int:
-        return self._fix_sign(self.seconds // 3600)
+        hours = 24 * self._dt.days
+        return hours + (self._dt.seconds // 3600)
 
     @property
     def minutes(self) -> int:
-        return self._fix_sign((self.seconds % 3600) // 60)
+        return self._dt.seconds % 3600 // 60
 
 
 def get_week_range(week: int | str) -> list[datetime.datetime]:

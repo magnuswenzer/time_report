@@ -1,18 +1,19 @@
-import os
-import pathlib
-import shutil
-import time
-
 import flet as ft
+import winsound
 
+from time_report import database, controller
+from time_report.gui.page_day_report import PageDayReport
 from time_report.gui.page_log_time import PageLogTime
 from time_report.gui.page_project import PageProject
 from time_report.gui.page_week_report import PageWeekReport
-from time_report.gui.page_day_report import PageDayReport
 from time_report.gui.page_week_schedule import PageWeekSchedule
 from time_report.gui.page_week_submit import PageWeekSubmit
-from time_report.models import Project
-from time_report import database, controller
+
+
+def _play_alert_sound():
+    duration = 500  # milliseconds
+    freq = 440  # Hz
+    winsound.Beep(freq, duration)
 
 
 class TimeReportApp(ft.Column):
@@ -26,6 +27,7 @@ class TimeReportApp(ft.Column):
     #     self.page_project.load_projects_from_database()
 
     def startup(self):
+        self.page.overlay.append(self._dlg)
         controller.add_default_date_info()
         self.page_project.load_projects_from_database()
         self.page_log_time.update_page()
@@ -99,18 +101,22 @@ class TimeReportApp(ft.Column):
         self.controls.append(self._tabs)
 
     def show_dialog(self, text: str):
+        print('===========', text)
         self._dialog_text.value = text
         self._open_dlg()
 
     def _open_dlg(self, *args):
-        self.page.dialog = self._dlg
         self._dlg.open = True
 
-    def show_info(self, text: str) -> None:
+    def show_info(self, text: str, alert: bool = False) -> None:
+        if alert:
+            _play_alert_sound()
         self._info_text.value = text
         self._info_text.update()
 
     def _on_change_tab(self, *args):
+        if self._tabs.selected_index == 1:
+            self.page_project.update_page()
         if self._tabs.selected_index == 2:
             self.page_day_report.update_page()
         elif self._tabs.selected_index == 3:
