@@ -36,7 +36,7 @@ class PageWeekSubmit(ft.Column):
             self._table,
             ft.Row([
                 ft.ElevatedButton('Rapportera tid', on_click=self._submit),
-                ft.ElevatedButton('Markera som rapporterad', on_click=self._mark_as_reported)
+                # ft.ElevatedButton('Markera som rapporterad', on_click=self._mark_as_reported)
             ])
         ]
 
@@ -232,11 +232,12 @@ class PageWeekSubmit(ft.Column):
                     if not value:
                         continue
                     date = self.week_dates[i]
+                    print(f'{proj=}   :   {date=}   :    {value=}')
                     controller.submit_time(proj_name=proj, date=date, nr_hours=int(value))
         except Exception as e:
             self.main_app.show_info(e, alert=True)
 
-    def _mark_as_reported(self, *args) -> None:
+    def old_mark_as_reported(self, *args) -> None:
         try:
             for proj, proj_fields in self._fields.items():
                 for i, (d, field) in enumerate(proj_fields.items()):
@@ -250,6 +251,7 @@ class PageWeekSubmit(ft.Column):
             self.main_app.show_info(e, alert=True)
 
     def update_page(self) -> None:
+        self.week_selection.goto_this_week()
         self._on_change_week()
 
 

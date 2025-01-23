@@ -29,7 +29,7 @@ class WeekSelection(ft.Row):
             ft.IconButton(icon=ft.icons.ARROW_LEFT, on_click=self._goto_previous_week),
             self._week_dropdown,
             ft.IconButton(icon=ft.icons.ARROW_RIGHT, on_click=self._goto_next_week),
-            ft.ElevatedButton('Gå till den här veckan', on_click=self._goto_this_week),
+            ft.ElevatedButton('Gå till den här veckan', on_click=self.goto_this_week),
             ft.ElevatedButton('Gå till första veckan som inte rapporterats', on_click=self._goto_first_unreported_week),
         ]
 
@@ -40,8 +40,8 @@ class WeekSelection(ft.Row):
     def _on_change_week(self, *args):
         self._callback_change_week()
 
-    def _goto_this_week(self, *args):
-        self._week_dropdown.value = datetime.datetime.now().strftime('%W')
+    def goto_this_week(self, *args):
+        self._week_dropdown.value = datetime.datetime.now().strftime('%W').strip('0')
         self._week_dropdown.update()
         self._on_change_week()
 

@@ -37,7 +37,8 @@ class TimeSubmit(SQLModel, table=True):
     date: datetime.date
     submitted_time: datetime.timedelta
     comment: str = Field(default='')
-    is_reported: bool = Field(default=False)
+    # is_reported: bool = Field(default=False)
+    report_date: datetime.date
 
     project_id: int = Field(foreign_key="project.id")
     project: Project = Relationship(back_populates="timesubmits")

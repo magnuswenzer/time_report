@@ -30,7 +30,8 @@ class ManualLogTime(ft.Row):
                         # on_dismiss=self._on_discard_manual_date,
                     )
 
-        self._nr_minutes = ft.TextField(label='Antal minuter', input_filter=ft.NumbersOnlyInputFilter())
+        # self._nr_minutes = ft.TextField(label='Antal minuter', input_filter=ft.NumbersOnlyInputFilter())
+        self._nr_minutes = ft.TextField(label='Antal minuter', input_filter=ft.InputFilter(regex_string=r"^(-)?[0-9]*$", allow=True, replacement_string=""))
 
         self._btn_pick_date = ft.ElevatedButton(
                 datetime.datetime.now().strftime('%Y-%m-%d'),
@@ -70,9 +71,10 @@ class ManualLogTime(ft.Row):
         if not proj:
             self.main_app.show_info('Inget projekt valt!')
             return
-        if not self._nr_minutes.value:
+        if not self._nr_minutes.value or self._nr_minutes.value == '-':
             self.main_app.show_info('Ingen tid angiven!')
             return
+
         self.main_app.show_info(f'Loggar {self._nr_minutes.value} minuter på {proj.name}')
 
         controller.add_manual_time_to_project(proj, self.datetime, self._nr_minutes.value)

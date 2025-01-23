@@ -1,7 +1,7 @@
 import datetime
 
 import flet as ft
-from time_report import database, controller
+from time_report import database, controller, utils
 
 
 class PageDayReport(ft.Column):
@@ -25,6 +25,12 @@ class PageDayReport(ft.Column):
             help_text='Välj datum'
         )
 
+        self._tot_time = ft.Text()
+        tot_row = ft.Row([
+            ft.Text('Totalt idag:'),
+            self._tot_time
+        ])
+
         self._table = ft.DataTable(
             columns=[
                 ft.DataColumn(ft.Text("Project")),
@@ -32,27 +38,30 @@ class PageDayReport(ft.Column):
                 ft.DataColumn(ft.Text("Minuter"), numeric=True),
             ],
         )
-        self._set_table()
+        self._set_table_and_tot_time()
 
         self.controls = [
             self._btn_pick_date,
-            self._table
+            tot_row,
+            self._table,
         ]
 
     def _on_change_date(self, e):
         self._btn_pick_date.text = e.control.value.strftime('%Y-%m-%d')
-        self._btn_pick_date.update()
+        self.update_page()
 
     @property
     def datetime(self) -> datetime.datetime:
         return datetime.datetime.strptime(self._btn_pick_date.text, '%Y-%m-%d')
 
-    def _set_table(self) -> None:
+    def _set_table_and_tot_time(self) -> None:
         rows = []
+        tot = utils.TimeDelta()
         for proj in database.get_projects():
             td = controller.get_total_time_for_project_and_day(proj, self.datetime)
             if not td:
                 continue
+            tot += td
             rows.append(
                 ft.DataRow(
                     cells=[
@@ -64,8 +73,10 @@ class PageDayReport(ft.Column):
             )
             self._table.rows = rows
 
+        self._tot_time.value = f'{tot.hours}:{str(tot.minutes).zfill(2)}'
+
     def update_page(self) -> None:
-        self._set_table()
+        self._set_table_and_tot_time()
         self.update()
 
 

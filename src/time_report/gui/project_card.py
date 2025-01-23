@@ -2,7 +2,7 @@ from typing import Callable
 
 import flet as ft
 
-from time_report import database, controller
+from time_report import database, controller, utils
 from time_report.models import Project
 
 
@@ -88,10 +88,10 @@ class ProjectCard(ft.Card):
             return
         if self.proj:
             self.proj.name = self.name
-            self.contact = self.contact
-            self.project_number = self.project_number
-            self.kst = self.kst
-            self.hours_in_plan = self.hours_in_plan
+            self.proj.contact = self.contact
+            self.proj.project_number = self.project_number
+            self.proj.kst = self.kst
+            self.proj.hours_in_plan = self.hours_in_plan
         else:
             obj = Project(
                 name=self.name,
@@ -194,11 +194,12 @@ class ProjectCard(ft.Card):
             self._option_col.update()
 
     def update_card(self):
+        latest_date = None
         latest_sub = controller.get_latest_submitted_time()
-        if not latest_sub:
-            return
-        dt_worked = controller.get_total_time_for_project(proj=self.proj, date_stop=latest_sub.date)
-        dt_reported = controller.get_sum_of_submitted_time(date_stop=latest_sub.date, proj=self.proj)
+        if latest_sub:
+            latest_date = latest_sub.date
+        dt_worked = controller.get_total_time_for_project(proj=self.proj, date_stop=latest_date) or utils.TimeDelta()
+        dt_reported = controller.get_sum_of_submitted_time(date_stop=latest_date, proj=self.proj) or utils.TimeDelta()
         dt_extra = dt_worked - dt_reported
 
         self._time_worked.value = f'{dt_worked.hours}:{str(dt_worked.minutes).zfill(2)}'

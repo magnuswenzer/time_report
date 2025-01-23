@@ -52,7 +52,7 @@ def get_total_time_for_day(dtime: datetime.datetime, include_ongoing: bool = Tru
     return _get_total_time_for_time_logs(tlogs, include_ongoing=include_ongoing)
 
 
-def get_total_time_for_project(proj: Project, date_stop: datetime.date, include_ongoing: bool = True) -> utils.TimeDelta:
+def get_total_time_for_project(proj: Project, date_stop: datetime.date = None, include_ongoing: bool = True) -> utils.TimeDelta:
     tlogs = database.get_project_time_logs(proj, date_stop)
     if not tlogs:
         return None
@@ -185,8 +185,6 @@ def mark_as_reported(proj_name: str, date: datetime.date):
         raise Exception(f'Already reported with {sub.submitted_time} hours: {proj_name} ({date})')
     sub.is_reported = True
     database.add_object(sub)
-
-
 
 
 def add_default_date_info() -> None:

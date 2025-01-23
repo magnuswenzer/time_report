@@ -95,6 +95,7 @@ class PageWeekReport(ft.Column):
         self._table.rows = rows
 
     def update_page(self) -> None:
+        self.week_selection.goto_this_week()
         self._on_change_week()
 
 

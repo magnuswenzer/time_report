@@ -60,11 +60,17 @@ def get_time_logs_for_day(dtime: datetime.datetime):
 
 def get_project_time_logs(proj: Project, date_stop: datetime.date):
     start = datetime.datetime(datetime.datetime.now().year, 1, 1)
-    _, end = utils.get_day_range(date_stop)
+    end = None
+    if date_stop:
+        _, end = utils.get_day_range(date_stop)
     with Session(engine) as session:
-        statement = select(TimeLog).where(TimeLog.project_id == proj.id,
-                                          TimeLog.time_start >= start,
-                                          TimeLog.time_start <= end)
+        if end:
+            statement = select(TimeLog).where(TimeLog.project_id == proj.id,
+                                              TimeLog.time_start >= start,
+                                              TimeLog.time_start <= end)
+        else:
+            statement = select(TimeLog).where(TimeLog.project_id == proj.id,
+                                              TimeLog.time_start >= start)
         return list(session.exec(statement))
 
 
@@ -126,8 +132,10 @@ def get_time_submits(date_start: datetime.date = None,
                      date_stop: datetime.date = None,
                      proj: Project = None) -> list[TimeSubmit]:
     with Session(engine) as session:
-        statement = select(TimeSubmit).join(Project)
+        statement = select(TimeSubmit)
+        # statement = select(TimeSubmit).join(Project)
         if proj:
+            statement = statement.join(Project)
             statement = statement.where(Project.id == proj.id)
         if date_start:
             statement = statement.where(TimeSubmit.date >= date_start)
