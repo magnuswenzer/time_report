@@ -2,6 +2,7 @@ import flet as ft
 
 from time_report.gui.project_card import ProjectCard
 from time_report import database
+from time_report.settings import settings
 
 
 class PageProject(ft.Column):
@@ -12,27 +13,30 @@ class PageProject(ft.Column):
 
         btn_add = ft.ElevatedButton('Lägg till project', on_click=self._on_add_project)
 
-        # self.grid_view = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
+        # self.grid_view = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=False)
+        #mself.grid_view = ft.Column(expand=1, spacing=10, auto_scroll=True, scroll=True)
+        self.expand = True
         self.grid_view = ft.GridView(
             expand=1,
             runs_count=2,
-            max_extent=400,
-            child_aspect_ratio=1.0,
+            max_extent=500,
+            child_aspect_ratio=0.9,
             spacing=5,
             run_spacing=2,
         )
 
         self.controls.append(btn_add)
-        self.controls.append(self.grid_view)
+        self.controls.append(ft.Column([self.grid_view], expand=True, scroll=True))
 
     def load_projects_from_database(self):
-        for proj in database.get_projects():
+        self.grid_view.controls = []
+        for proj in database.get_projects(year=settings.year):
             pc = ProjectCard(callback_delete=self._on_delete_project, project=proj, main_app=self.main_app)
             self.grid_view.controls.append(pc)
-            self.grid_view.update()
+        self.grid_view.update()
 
     def _on_add_project(self, e=None) -> None:
-        self.grid_view.controls.append(ProjectCard(callback_delete=self._on_delete_project, main_app=self.main_app))
+        self.grid_view.controls.insert(0, ProjectCard(callback_delete=self._on_delete_project, main_app=self.main_app))
         self.grid_view.update()
 
     def _on_delete_project(self, proj: "ProjectControl"):
@@ -56,5 +60,6 @@ class PageProject(ft.Column):
         self.main_app.update_pages()
 
     def update_page(self) -> None:
+        self.load_projects_from_database()
         for pc in self.grid_view.controls:
             pc.update_card()

@@ -2,6 +2,7 @@ import datetime
 
 import flet as ft
 from time_report import database, controller, utils
+from time_report.settings import settings
 
 
 class PageDayReport(ft.Column):
@@ -17,8 +18,8 @@ class PageDayReport(ft.Column):
         )
 
         self._date_picker = ft.DatePicker(
-            first_date=datetime.datetime(year=datetime.datetime.now().year, month=1, day=1),
-            last_date=datetime.datetime(year=datetime.datetime.now().year, month=12, day=31),
+            first_date=datetime.datetime(year=settings.year, month=1, day=1),
+            last_date=datetime.datetime(year=settings.year, month=12, day=31),
             on_change=self._on_change_date,
             confirm_text='Välj',
             cancel_text='Avbryt',
@@ -57,7 +58,7 @@ class PageDayReport(ft.Column):
     def _set_table_and_tot_time(self) -> None:
         rows = []
         tot = utils.TimeDelta()
-        for proj in database.get_projects():
+        for proj in database.get_projects(year=settings.year):
             td = controller.get_total_time_for_project_and_day(proj, self.datetime)
             if not td:
                 continue

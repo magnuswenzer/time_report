@@ -1,9 +1,11 @@
+import datetime
 from typing import Callable
 
 import flet as ft
 
 from time_report import database, controller, utils
 from time_report.models import Project
+from time_report.settings import settings
 
 
 def get_int_or_none(value: str) -> int | None:
@@ -26,10 +28,12 @@ class ProjectCard(ft.Card):
         self.isolated = True
         self._color = None
         self.main_app = main_app
+        self.scale = 0.9
 
         self._callback_delete = callback_delete
 
         self._time_worked = ft.Text()
+        self._time_left_in_plan = ft.Text()
         self._time_reported = ft.Text()
         self._extra_time = ft.Text()
 
@@ -40,8 +44,11 @@ class ProjectCard(ft.Card):
         self._contact = ft.TextField(label='Kontaktperson', color=color)
         self._project_number = ft.TextField(label='Projektnummer', color=color)
         self._kst = ft.TextField(label='Kostnadsställe', color=color)
+        self._active = ft.Switch(label="Aktivt", value=True)
+        self._comment = ft.TextField(multiline=True, label='Kommentar', color=color)
 
         row_time_worked = ft.Row([ft.Text('Arbetad tid:'), self._time_worked])
+        row_time_left_in_plan = ft.Row([ft.Text('Tid kvar enligt plan:'), self._time_left_in_plan])
         row_time_reported = ft.Row([ft.Text('Rapporterad tid:'), self._time_reported])
         row_extra_time = ft.Row([ft.Text('Extratid:'), self._extra_time])
 
@@ -64,15 +71,27 @@ class ProjectCard(ft.Card):
             self._project_number,
             self._hours_in_plan,
             row_time_worked,
+            row_time_left_in_plan,
             row_time_reported,
             row_extra_time,
             self._kst,
-            self._contact] )
+            self._contact,
+            self._active,
+            self._comment], scale=0.85)
 
-        self.content = ft.Row([
-            self._fields,
-            self._option_col
-        ])
+        container = ft.Container(
+            content=ft.Row([
+                self._fields,
+                self._option_col
+            ]),
+            padding=10
+        )
+        self.content = container
+
+        # self.content = ft.Row([
+        #     self._fields,
+        #     self._option_col
+        # ])
 
         if project:
             self.set(project)
@@ -92,19 +111,24 @@ class ProjectCard(ft.Card):
             self.proj.project_number = self.project_number
             self.proj.kst = self.kst
             self.proj.hours_in_plan = self.hours_in_plan
+            self.proj.active = self.active
+            self.proj.comment = self.comment
         else:
             obj = Project(
+                year=settings.year,
                 name=self.name,
                 contact=self.contact,
                 project_number=self.project_number,
                 kst=self.kst,
-                hours_in_plan=self.hours_in_plan
+                hours_in_plan=self.hours_in_plan,
+                active=self.active,
+                comment=self.comment,
             )
 
             self.proj = obj
         database.add_object(self.proj)
         self.main_app.update_pages()
-        self._set_view_mode()
+        self._set_view_mode(update=False)
 
     def _delete(self, *args):
         if self.proj:
@@ -137,6 +161,14 @@ class ProjectCard(ft.Card):
         self._contact.value = get_str(value)
 
     @property
+    def comment(self) -> str:
+        return get_str(self._comment.value)
+
+    @comment.setter
+    def comment(self, value: str):
+        self._comment.value = get_str(value)
+
+    @property
     def project_number(self) -> int:
         return get_int_or_none(self._project_number.value)
 
@@ -151,6 +183,14 @@ class ProjectCard(ft.Card):
     @kst.setter
     def kst(self, value: int):
         self._kst.value = get_str(value)
+
+    @property
+    def active(self) -> bool:
+        return self._active.value
+
+    @active.setter
+    def active(self, value: bool):
+        self._active.value = value
 
     @property
     def time_worked(self) -> int:
@@ -174,6 +214,8 @@ class ProjectCard(ft.Card):
         self.contact = proj.contact
         self.hours_in_plan = proj.hours_in_plan
         self.kst = proj.kst
+        self.active = proj.active
+        self.comment = proj.comment
         self._color = proj.color
         self._set_view_mode(update=False)
 
@@ -182,7 +224,14 @@ class ProjectCard(ft.Card):
         self._button_edit.disabled = False
         self._button_save.disabled = True
         if update:
-            self._fields.update()
+            # for wid in self._fields.controls:
+            #     print()
+            #     print(f"{wid=}")
+            #     print(f"{wid.value=}")
+            #     if hasattr(wid, "label"):
+            #         print(f"{wid.label=}")
+            #     wid.update()
+            # self._fields.update()
             self._option_col.update()
 
     def _set_edit_mode(self, *args, update: bool = True) -> None:
@@ -195,14 +244,26 @@ class ProjectCard(ft.Card):
 
     def update_card(self):
         latest_date = None
-        latest_sub = controller.get_latest_submitted_time()
-        if latest_sub:
-            latest_date = latest_sub.date
+        # latest_sub = controller.get_latest_submitted_time()
+        # if latest_sub:
+        #     latest_date = latest_sub.date
         dt_worked = controller.get_total_time_for_project(proj=self.proj, date_stop=latest_date) or utils.TimeDelta()
         dt_reported = controller.get_sum_of_submitted_time(date_stop=latest_date, proj=self.proj) or utils.TimeDelta()
         dt_extra = dt_worked - dt_reported
 
         self._time_worked.value = f'{dt_worked.hours}:{str(dt_worked.minutes).zfill(2)}'
         self._time_reported.value = f'{dt_reported.hours}:{str(dt_reported.minutes).zfill(2)}'
-        self._extra_time.value = f'{dt_extra.hours}:{str(dt_extra.minutes).zfill(2)}'
+        sign = ''
+        minutes = dt_extra.minutes
+        if dt_extra.minutes < 0:
+            sign = '-'
+            minutes = str(dt_extra.minutes).lstrip('-')
+        self._extra_time.value = f'{sign}{dt_extra.hours}:{str(minutes).zfill(2)}'
+
+        if self.hours_in_plan:
+            in_plan = utils.TimeDelta(datetime.timedelta(hours=self.hours_in_plan))
+            dt_left_in_plan = in_plan - dt_worked
+            # self._time_left_in_plan.value = f'{dt_left_in_plan.hours}:{str(dt_left_in_plan.minutes).zfill(2)}'
+            self._time_left_in_plan.value = f'{dt_left_in_plan.hours}'
+
         self.update()

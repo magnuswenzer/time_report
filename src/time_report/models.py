@@ -1,17 +1,23 @@
 import datetime
 import pathlib
 
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, Session, SQLModel, create_engine, select, Relationship
 
 
 class Project(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("name", "year", name="name_year"),
+    )
     id: int | None = Field(default=None, primary_key=True)
-    name: str = Field(unique=True)
+    name: str
+    year: int
     contact: str | None
     project_number: int | None
     kst: int | None
     hours_in_plan: int | None
     color: str | None
+    active: bool = Field(default=True)
     comment: str = Field(default='')
 
     timelogs: list["TimeLog"] = Relationship(back_populates="project")
@@ -30,6 +36,9 @@ class TimeLog(SQLModel, table=True):
 
     project_id: int = Field(foreign_key="project.id")
     project: Project = Relationship(back_populates="timelogs")
+
+    def __lt__(self, other):
+        return self.time_start < other.time_start
 
 
 class TimeSubmit(SQLModel, table=True):
@@ -53,13 +62,20 @@ class DateInfo(SQLModel, table=True):
     comment: str = Field(default='')
 
 
+class WeekInfo(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    week_number: int
+    work_percentage: int = Field(default=100)
+    comment: str = Field(default='')
+
+
 home_dir = pathlib.Path().home() / 'time_report'
 home_dir.mkdir(parents=True, exist_ok=True)
 sqlite_file_name = str(home_dir / "time_report.sqlite")
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 
 connect_args = {"check_same_thread": False}
-engine = create_engine(sqlite_url, echo=True, connect_args=connect_args)
+engine = create_engine(sqlite_url, echo=False, connect_args=connect_args)
 
 
 def create_db_and_tables():
