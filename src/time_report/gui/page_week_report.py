@@ -4,6 +4,7 @@ import flet as ft
 from time_report import database, controller
 from time_report import utils
 from time_report.gui import week_selection
+from time_report.settings import settings
 
 
 class PageWeekReport(ft.Column):
@@ -48,17 +49,20 @@ class PageWeekReport(ft.Column):
         self._week_dates = utils.get_week_dates(self.week)
 
     def _update_header(self, update: bool = True):
+        red_dates = utils.get_red_dates().get_dates(settings.year)
         for d, text, wd in zip(self._week_dates, self._header_texts, utils.WEEKDAYS):
             text.value = f'{wd}\n{d.strftime('%Y-%m-%d')}'
+            text.color = None
+            if d.weekday() in [5, 6] or d in red_dates:
+                text.color = 'red'
             if update:
                 text.update()
 
     def _update_hours_in_table(self):
         rows = []
-        for proj in database.get_projects():
-            print(f'{self.week=}  :  {proj=}')
+        for proj in database.get_projects(year=settings.year):
             week_td = controller.get_total_time_for_project_and_week(proj, self.week)
-            print(f'{week_td=  }')
+            #print(f'{self.week=}  :  {proj=}  :  {week_td=}')
             if not week_td:
                 continue
             cells = []
@@ -95,6 +99,7 @@ class PageWeekReport(ft.Column):
         self._table.rows = rows
 
     def update_page(self) -> None:
+        self.week_selection.goto_this_week()
         self._on_change_week()
 
 

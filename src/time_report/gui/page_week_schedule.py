@@ -4,6 +4,7 @@ import flet as ft
 from time_report import database, controller
 from time_report import utils
 from time_report.gui import week_selection
+from time_report.settings import settings
 
 
 class PageWeekSchedule(ft.Column):
@@ -41,6 +42,9 @@ class PageWeekSchedule(ft.Column):
 
         self.week_selection = week_selection.WeekSelection(callback_change_week=self._on_change_week)
 
+        self._work_percentage = ft.TextField(label='Anställningsprocent',
+                                             input_filter=ft.NumbersOnlyInputFilter())
+
         dates_col = ft.Column()
 
         for date, field in zip(self._dates, self._weekday_fields):
@@ -50,10 +54,11 @@ class PageWeekSchedule(ft.Column):
 
         self.controls = [
             self.week_selection,
-            ft.Row([
-                dates_col,
-                button_col
-            ])
+            self._work_percentage,
+            # ft.Row([
+            #     dates_col,
+            #     button_col
+            # ])
         ]
 
     @property
@@ -61,24 +66,35 @@ class PageWeekSchedule(ft.Column):
         return int(self.week_selection.value)
 
     @property
+    def work_percentage(self) -> int:
+        value = self._work_percentage.value
+        if not value:
+            return 100
+        return int(value)
+
+    @property
     def week_dates(self) -> list[datetime.date]:
         return utils.get_week_dates(self.week)
 
     def _on_change_week(self, *args):
-        self._update_dates()
-        self._update_date_info()
+        # self._update_dates()
+        # self._update_date_info()
+        self._update_work_percentage()
 
     def _update_dates(self):
         for text, date in zip(self._dates, self.week_dates):
             text.value = date.strftime(utils.DATE_FORMAT)
             text.update()
 
+    def _update_work_percentage(self):
+        wp = controller.get_work_percentage_for_week(self.week)
+        self._work_percentage.value = str(wp)
+        self._work_percentage.update()
+
     def _update_date_info(self):
         wdates = self.week_dates
-        print(f'{wdates=}')
-        print(f'{self._dates=}')
         dinfos = controller.get_dates_info(wdates[0], wdates[-1])
-        print(f'{dinfos=}')
+        print(f"{len(dinfos)=}")
         for date, field, info in zip(self._dates, self._weekday_fields, dinfos):
             field.value = ''
             date.color = 'primary'
@@ -87,10 +103,15 @@ class PageWeekSchedule(ft.Column):
                 field.value = str(td.hours)
             if info.non_working_day:
                 date.color = 'red'
+            field.disabled = False
+            if info.date.year != settings.year:
+                print(f"{info=}")
+                field.disabled = True
             field.update()
             date.update()
 
     def update_page(self) -> None:
+        self.week_selection.goto_this_week()
         self._on_change_week()
 
     def _get_info_from_week(self) -> list[dict]:
@@ -102,19 +123,31 @@ class PageWeekSchedule(ft.Column):
             info.append(day)
         return info
 
+    def _get_week_info_from_week(self) -> dict:
+        return dict(
+            week_nr=self.week,
+            work_percentage=self.work_percentage,
+        )
+
     def _apply_to_current_week(self, *args):
         info = self._get_info_from_week()
         controller.set_info_for_dates(*info)
+        winfo = self._get_week_info_from_week()
+        controller.set_info_for_week(winfo)
         self.update_page()
 
     def _apply_to_current_week_and_following(self, *args):
         info = self._get_info_from_week()
         controller.set_week_info_from_date(info[0]['date'], *info)
+        winfo = self._get_week_info_from_week()
+        controller.set_week_info_from_week(self.week, winfo)
         self.update_page()
 
     def _apply_to_all_weeks(self, *args):
         info = self._get_info_from_week()
-        controller.set_week_info_from_date(datetime.datetime(datetime.datetime.now().year, 1, 1).date(), *info)
+        controller.set_week_info_from_date(datetime.datetime(settings.year, 1, 1).date(), *info)
+        winfo = self._get_week_info_from_week()
+        controller.set_week_info_from_week(utils.get_weeks_for_year()[0].week, winfo)
         self.update_page()
 
 
