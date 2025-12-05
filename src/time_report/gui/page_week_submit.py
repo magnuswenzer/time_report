@@ -5,7 +5,7 @@ import winsound
 
 from time_report import database, controller
 from time_report import utils
-from time_report.gui import week_selection
+from time_report.gui import week_selection, sum_times
 from time_report.settings import settings
 
 
@@ -20,6 +20,8 @@ class PageWeekSubmit(ft.Column):
         self._week_dates = []
 
         self.week_selection = week_selection.WeekSelection(callback_change_week=self._on_change_week)
+
+        self.sum_times = sum_times.SumTimes(self.main_app)
 
         self._header_texts = []
         columns = [ft.DataColumn(ft.Text("Projekt"))]
@@ -63,7 +65,12 @@ class PageWeekSubmit(ft.Column):
                 self._show_all_projs,
             ]),
             # self._table,
-            ft.Column(controls=[self._table], scroll=True, expand=True),
+            ft.Row([
+                ft.Column(controls=[self._table], scroll=True, expand=True),
+                ft.VerticalDivider(width=9, thickness=3),
+                self.sum_times
+            ], expand=True),
+            # ft.Column(controls=[self._table], scroll=True, expand=True),
             ft.Row([
                 self._button_report_time,
                 # ft.ElevatedButton('Markera som rapporterad', on_click=self._mark_as_reported)
@@ -95,9 +102,10 @@ class PageWeekSubmit(ft.Column):
         self.update()
         # self._check_if_reported()
         self._on_change_field()
+        self._update_sum_times()
         # self._update_tot_overtime()
-        last_date = min([datetime.datetime.now().date(), self._week_dates[-1]])
-        print(f"{last_date=}")
+        # last_date = min([datetime.datetime.now().date(), self._week_dates[-1]])
+        # print(f"{last_date=}")
         #self._update_tot_overtime(date=last_date)
         # self._update_report_diff()
         #self._update_work_hours_this_week()
@@ -122,8 +130,13 @@ class PageWeekSubmit(ft.Column):
         self._date_sum = {}
         self._proj_sum = {}
         self._tot_sum = None
+
         for proj in database.get_projects(year=settings.year):
-            week_td = controller.get_total_time_for_project_and_week(proj, self.week)
+            week_td = controller.get_total_submitted_time_for_project_and_week(proj,
+                                                                               self.week)
+            if not week_td:
+                week_td = controller.get_total_time_for_project_and_week(proj, self.week)
+
             if not week_td and not self._show_all_projs.value:
                 continue
             self._fields[proj.name] = {}
@@ -206,35 +219,6 @@ class PageWeekSubmit(ft.Column):
                     if scheduled_time[d] == day_sums[d]:
                         break
 
-    def old__set_suggestion_in_fields(self) -> None:
-        tot_sum = self._get_tot_sum()
-        tot_scheduled_time = controller.get_sum_of_scheduled_time(date_start=self.week_dates[0], date_stop=self.week_dates[-1])
-        print(f'{tot_scheduled_time=}')
-        for proj_name, value in self._get_time_diff_for_projects().items():
-            hour_diff = value['diff'].hours
-            if not hour_diff:
-                continue
-            for i, (d, field) in enumerate(self._fields[proj_name].items()):
-                if tot_sum == tot_scheduled_time:
-                    break
-                if not hour_diff:
-                    continue
-                current_field_value_str = field.value or field.label
-                current_field_value = int(current_field_value_str or 0)
-                date = self.week_dates[i]
-                date_info = controller.get_date_info(date)
-                max_nr_hours = utils.TimeDelta(date_info.time_in_plan).hours
-                while current_field_value < max_nr_hours:
-                    current_field_value += 1
-                    field.value = str(current_field_value)
-                    hour_diff -= 1
-                    tot_sum += 1
-                    # print(f'{proj_name=}  :  {hour_diff=}  :  {type(hour_diff)=}  :   {tot_sum=}  :  {current_field_value=}')
-                    if not hour_diff:
-                        break
-                    if tot_sum == tot_scheduled_time:
-                        break
-
     def _set_submitted_time(self) -> bool:
         is_submitted = False
         week_dates = self.week_dates
@@ -258,6 +242,9 @@ class PageWeekSubmit(ft.Column):
         self._update_date_sum()
         self._update_tot_sum()
         self.update()
+
+    def _update_sum_times(self):
+        self.sum_times.update_times(self._week_dates[-1])
 
     def _update_proj_sum(self):
         for proj, value in self._get_time_diff_for_projects().items():
@@ -403,7 +390,7 @@ class PageWeekSubmit(ft.Column):
     #     self._report_diff.update()
 
     def update_page(self) -> None:
-        self.week_selection.goto_this_week()
+        self.week_selection.goto_active_week()
         self._on_change_week()
 
 

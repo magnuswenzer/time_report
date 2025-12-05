@@ -1,6 +1,7 @@
 import datetime
 import pathlib
 
+import isoweek
 from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, Session, SQLModel, create_engine, select, Relationship
 
@@ -52,6 +53,10 @@ class TimeSubmit(SQLModel, table=True):
     project_id: int = Field(foreign_key="project.id")
     project: Project = Relationship(back_populates="timesubmits")
 
+    @property
+    def week(self) -> isoweek.Week:
+        return isoweek.Week.withdate(self.date)
+
 
 class DateInfo(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -64,6 +69,7 @@ class DateInfo(SQLModel, table=True):
 
 class WeekInfo(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    year: int
     week_number: int
     work_percentage: int = Field(default=100)
     comment: str = Field(default='')

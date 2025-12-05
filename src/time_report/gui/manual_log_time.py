@@ -64,6 +64,8 @@ class ManualLogTime(ft.Row):
     def _update_project_dropdown(self, update: bool = True) -> None:
         options = []
         for proj in database.get_projects(year=settings.year):
+            if not proj.active:
+                continue
             options.append(ft.dropdown.Option(proj.name))
         self._project_dropdown.options = options
         if update:

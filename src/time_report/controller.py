@@ -62,8 +62,14 @@ def add_manual_time_to_project(proj: Project, time_start: datetime.datetime, nr_
     database.add_object(tlog)
 
 
-def get_all_time_logs_for_project(proj: Project) -> list[TimeLog]:
-    tlogs = database.get_project_time_logs(settings.year, proj)
+def get_all_time_logs_for_project(proj: Project,
+                                  date_stop: datetime.date = None) -> list[TimeLog]:
+    date_stop = date_stop or settings.last_date_of_year
+    tlogs = database.get_project_time_logs(settings.year,
+                                           proj,
+                                           date_start=settings.first_date_of_year,
+                                           date_stop=date_stop,
+                                           )
     return tlogs
 
 
@@ -80,13 +86,19 @@ def get_total_time_for_day(dtime: datetime.datetime, include_ongoing: bool = Tru
     return _get_total_time_for_time_logs(tlogs, include_ongoing=include_ongoing)
 
 
-def get_total_time_for_project(proj: Project, date_stop: datetime.date = None, include_ongoing: bool = True) -> utils.TimeDelta:
+def get_total_time_for_project(proj: Project,
+                               date_stop: datetime.date = None,
+                               include_ongoing: bool = True) -> utils.TimeDelta:
     #print('='*100)
-    tlogs = database.get_project_time_logs(settings.year, proj, date_stop)
+    tlogs = get_all_time_logs_for_project(proj, date_stop=date_stop)
+    # tlogs = database.get_project_time_logs(settings.year,
+    #                                        proj,
+    #                                        date_start=settings.gt,
+    #                                        date_stop=date_stop)
     #print(f'{proj=}   :   {date_stop=}   :   {len(tlogs)}   :   {tlogs}')
     #print('-' * 100)
     if not tlogs:
-        return None
+        return utils.TimeDelta()
     return _get_total_time_for_time_logs(tlogs, include_ongoing=include_ongoing)
 
 
@@ -104,7 +116,18 @@ def get_total_time_for_project_and_week(proj: Project, week_number: str | int, i
     return _get_total_time_for_time_logs(tlogs, include_ongoing=include_ongoing)
 
 
-def get_total_time_for_week(week_number: str | int, include_ongoing: bool = True) -> utils.TimeDelta | None:
+def get_total_submitted_time_for_project_and_week(proj: Project,
+                                                  week_number: str | int) -> utils.TimeDelta | None:
+    weekdays = utils.get_week_range(week_number)
+    tlogs = database.get_time_submits(date_start=weekdays[0],
+                                      date_stop=weekdays[-1],
+                                      proj=proj)
+    if not tlogs:
+        return None
+    return _get_total_time_for_time_submits(tlogs)
+
+
+def get_total_time_for_week(week_number: str | int) -> utils.TimeDelta | None:
     week_dates = utils.get_week_dates(week_number)
     last_date = min([datetime.datetime.now().date(), week_dates[-1]])
     worked_time = get_sum_of_worked_time(date_start=week_dates[0],
@@ -112,7 +135,8 @@ def get_total_time_for_week(week_number: str | int, include_ongoing: bool = True
     return worked_time
 
 
-def _get_total_time_for_time_logs(tlogs: list[TimeLog], include_ongoing: bool = True) -> utils.TimeDelta | None:
+def _get_total_time_for_time_logs(tlogs: list[TimeLog],
+                                  include_ongoing: bool = True) -> utils.TimeDelta | None:
     if not tlogs:
         return None
     time_delta = datetime.timedelta()
@@ -122,6 +146,16 @@ def _get_total_time_for_time_logs(tlogs: list[TimeLog], include_ongoing: bool = 
             if not include_ongoing:
                 continue
             dt = datetime.datetime.now() - tlog.time_start
+        time_delta += dt
+    return utils.TimeDelta(time_delta)
+
+
+def _get_total_time_for_time_submits(tlogs: list[TimeSubmit]) -> utils.TimeDelta | None:
+    if not tlogs:
+        return None
+    time_delta = datetime.timedelta()
+    for tlog in tlogs:
+        dt = tlog.submitted_time
         time_delta += dt
     return utils.TimeDelta(time_delta)
 
@@ -136,7 +170,7 @@ def get_dates_info(date_start: datetime.date | None = None, date_stop: datetime.
 
 
 def get_week_info(week_nr: int) -> WeekInfo | None:
-    return database.get_week_info(week_nr)
+    return database.get_week_info(week_nr, settings.year)
 
 
 def get_work_percentage_for_week(week_nr: int) -> int:
@@ -162,9 +196,10 @@ def set_info_for_dates(*lst: dict) -> None:
 
 
 def set_info_for_week(week_info: dict) -> None:
-    info = database.get_week_info(week_info['week_nr'])
+    info = database.get_week_info(week_info['week_nr'], settings.year)
     if not info:
         info = WeekInfo()
+    info.year = settings.year
     info.week_number = week_info['week_nr']
     info.work_percentage = week_info['work_percentage']
     database.add_object(info)
@@ -198,17 +233,10 @@ def set_week_info_from_date(date: datetime.date, *lst: dict) -> None:
 def get_sum_of_worked_time(date_start: datetime.date = None,
                            date_stop: datetime.date = None,
                            include_ongoing: bool = True) -> utils.TimeDelta:
-    if not date_start:
-        date_start = datetime.date(settings.year, 1, 1)
+    date_start = date_start or settings.first_date_of_year
     logs = database.get_time_logs(date_start=date_start,
                                   date_stop=date_stop,
                                   include_ongoing=include_ongoing)
-    # print(f"{date_start=}")
-    # print(f"{date_stop=}")
-    # print()
-    # for l in logs:
-    #     print(l.project_id, l.manual, l.time_start, l.dt)
-    # print()
     dt = datetime.timedelta()
     for lo in logs:
         if not lo.dt:
@@ -217,24 +245,12 @@ def get_sum_of_worked_time(date_start: datetime.date = None,
     return utils.TimeDelta(dt)
 
 
-def old_get_sum_of_scheduled_time(date_start: datetime.date = None, date_stop: datetime.date = None) -> utils.TimeDelta:
-    infos = database.get_dates_info(date_start=date_start, date_stop=date_stop)
-    dt = datetime.timedelta()
-    for info in infos:
-        if not info.time_in_plan:
-            continue
-        dt += info.time_in_plan
-    return utils.TimeDelta(dt)
-
-
 def get_sum_of_scheduled_time(date_start: datetime.date = None, date_stop: datetime.date = None) -> utils.TimeDelta:
     red_dates = utils.get_red_dates().get_dates(settings.year)
     dt = datetime.timedelta()
 
-    if not date_start:
-        date_start = datetime.datetime(settings.year, 1, 1).date()
-    if not date_stop:
-        date_stop = datetime.datetime.now().date()
+    date_start = date_start or settings.first_date_of_year
+    date_stop = date_stop or datetime.datetime.now().date()
 
     for date in utils.get_date_range(date_start, date_stop):
         if date in red_dates:
@@ -268,6 +284,7 @@ def get_sum_of_scheduled_time_per_day(date_start: datetime.date = None, date_sto
 
 
 def get_sum_of_submitted_time(date_start: datetime.date = None, date_stop: datetime.date = None, proj: Project = None) -> utils.TimeDelta:
+    date_start = date_start or settings.first_date_of_year
     subs = database.get_time_submits(date_start=date_start, date_stop=date_stop, proj=proj)
     dt = datetime.timedelta()
     for sub in subs:
@@ -355,6 +372,9 @@ def update_comment_in_time_log(_id: int, comment: str) -> None:
     tlog = database.get_time_log_by_id(_id)
     tlog.comment = comment
     database.add_object(tlog)
+
+def get_projects():
+    return list(database.get_projects(year=settings.year))
 
 
 if __name__ == '__main__':

@@ -241,10 +241,23 @@ def get_first_date_of_week(week: int | str) -> datetime.date:
     return get_week_dates(week)[0]
 
 
+def get_last_date_of_week(week: int | str = None,
+                          date: datetime.date = None) -> datetime.date:
+    if date:
+        return get_week_for_date(date).days()[-1]
+    return get_week_dates(week)[-1]
+
+
 def get_day_range(dtime: datetime.datetime | datetime.date) -> list[datetime.datetime]:
     start_of_day = datetime.datetime(dtime.year, dtime.month, dtime.day)
     end_of_day = start_of_day + datetime.timedelta(days=1, seconds=-1)
     return [start_of_day, end_of_day]
+
+
+def get_first_date_of_year() -> datetime.date:
+    """Returns 1 jan of selected year or first day of the first wek of current year"""
+    settings.year
+
 
 
 def old_get_red_dates(year: int) -> list[datetime.date]:
@@ -291,7 +304,14 @@ def _download_red_dates(year: int):
         df.to_csv(_get_red_dates_file_path(year), sep='\t', index=False)
     except:
         print(f'Could not download red dates for year: {year}')
-        raise
+
+
+def get_h_str(tdelta: TimeDelta) -> str:
+    return str(tdelta).split(":")[0]
+
+
+def get_hm_str(tdelta: TimeDelta) -> str:
+    return str(tdelta).rsplit(":", 1)[0]
 
 
 if __name__ == '__main__':

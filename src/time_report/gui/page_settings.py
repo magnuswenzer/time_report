@@ -20,11 +20,15 @@ class PageSettings(ft.Column):
         self.controls = [
             ft.Divider(),
             self._year,
-            self._get_visible_col()
+            ft.Divider(),
+            self._get_visible_col(),
+            ft.Divider(),
+            self._get_week_range_col()
             ]
         self._get_non_working_days_col()
         self._update_year_list(update=False)
         self._update_visible(update=False)
+        self._update_week_range(update=False)
 
     def _get_visible_col(self) -> ft.Column:
         self._visible_wids['show_vab'] = ft.Switch("Visa VAB") #, on_change=self._on_change_visible)
@@ -34,6 +38,27 @@ class PageSettings(ft.Column):
             ft.ElevatedButton("Uppdatera", on_click=self._on_update_visible)
         ])
         return self._visible_col
+
+    def _get_week_range_col(self) -> ft.Column:
+        self._first_week = ft.Dropdown(
+            label="Första veckan på året",
+            hint_text="Första veckan på året",
+            autofocus=False,
+            on_change=self._on_update_week_range,
+        )
+        self._last_week = ft.Dropdown(
+            label="Sista veckan på året",
+            hint_text="Sista veckan på året",
+            autofocus=False,
+            on_change=self._on_update_week_range,
+        )
+        return ft.Column([
+            ft.Text("Veckoval"),
+            ft.Row([
+                self._first_week,
+                self._last_week
+            ]),
+        ])
 
     def _get_non_working_days_col(self) -> ft.Column:
         all_date_info = controller.get_dates_info(
@@ -64,20 +89,39 @@ class PageSettings(ft.Column):
         data = settings.data
         for key, wid in self._visible_wids.items():
             save_value = data.get(key)
-            print(key, save_value)
             if save_value is None:
                 continue
             wid.value = save_value
         if update:
             self._visible_col.update()
 
+    def _update_week_range(self, update: bool = True):
+        year_weeks = utils.get_weeks_for_year(settings.year)
+        self._first_week.options = []
+        self._last_week.options = []
+        for week in year_weeks:
+            self._first_week.options.append(ft.dropdown.Option(str(week.week)))
+            self._last_week.options.append(ft.dropdown.Option(str(week.week)))
+
+        self._first_week.value = str(settings.first_week_of_year.week)
+        self._last_week.value = str(settings.last_week_of_year.week)
+
+        if update:
+            self._first_week.update()
+            self._last_week.update()
+
     def _on_select_year(self, e):
         settings.year = int(self._year.value)
+        self._update_week_range()
 
     def _on_update_visible(self, e):
         for key, wid in self._visible_wids.items():
             settings[key] = wid.value
         settings.save_settings()
+
+    def _on_update_week_range(self, e):
+        settings.first_week_of_year = self._first_week.value
+        settings.last_week_of_year = self._last_week.value
 
 
 

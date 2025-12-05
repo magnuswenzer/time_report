@@ -17,6 +17,22 @@ class LogTimeButtons(ft.Column):
         self.expand = True
 
         self._current_project = ft.Text(size=40)
+        self._button_row = ft.Row(expand=True)
+
+        self.controls.append(ft.Row([ft.Text('Nu loggas:'), self._current_project]))
+        # self.controls.append(self._current_project)
+        self.controls.append(ft.ElevatedButton('Stoppa', on_click=self._stop))
+        self.controls.append(ft.Divider())
+        self.controls.append(self._button_row)
+
+    def old__init__(self, main_app):
+        super().__init__()
+        self.main_app = main_app
+        self._buttons = {}
+        self._running_proj = None
+        self.expand = True
+
+        self._current_project = ft.Text(size=40)
         self._button_column_1 = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO)
         self._button_column_2 = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO)
         self._button_column_3 = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO)
@@ -32,6 +48,35 @@ class LogTimeButtons(ft.Column):
         ], expand=True))
 
     def update_frame(self) -> None:
+        self._buttons = {}
+        self._button_row.controls = []
+        #running_tlog = database.get_running_time_log(year=settings.year)
+        running_tlog = database.get_running_time_log()
+        print(f'{running_tlog=}')
+        print(f'{settings.year=}')
+        self._running_proj = None
+        if running_tlog and running_tlog.time_start.year == settings.year:
+            self._running_proj = database.get_project(running_tlog.project_id, year=settings.year)
+            self._current_project.value = self._running_proj.name
+            self.main_app.show_info(
+                f'Start loggning {self._running_proj.name} ({running_tlog.time_start.strftime("%H:%M")})')
+            self._current_project.update()
+        target_col = None
+        for i, proj in enumerate(sorted(database.get_projects(year=settings.year),
+                                        key=lambda x: x.name)):
+            if not i % 8:
+                target_col = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO)
+                self._button_row.controls.append(target_col)
+            btn = ft.ElevatedButton(proj.name,
+                                    width=250,
+                                    on_click=lambda e, p=proj: self._on_select_proj(e, p))
+            if not proj.active:
+                btn.disabled = True
+            self._buttons[proj.name] = btn
+            target_col.controls.append(btn)
+        self.update()
+
+    def old_update_frame(self) -> None:
         self._button_column_1.controls = []
         self._button_column_2.controls = []
         self._button_column_3.controls = []
