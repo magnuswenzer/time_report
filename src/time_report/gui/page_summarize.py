@@ -15,6 +15,8 @@ class WeekPost(ft.Row):
         self.active = False
         self.w = w
         self.start, self.stop = utils.get_week_range(w)
+        self.start = max([self.start, datetime.date(settings.year, 1, 1)])
+        self.stop = min([self.stop, datetime.date(settings.year, 12, 31)])
 
         self.worked_time = controller.get_total_time_for_week(w) or utils.TimeDelta()
         self.submitted_time = controller.get_sum_of_submitted_time(date_start=self.start, date_stop=self.stop) or utils.TimeDelta()
@@ -22,10 +24,6 @@ class WeekPost(ft.Row):
         self.worked_minus_scheduled = utils.TimeDelta()
         self.worked_minus_submitted = utils.TimeDelta()
         self.submitted_minus_scheduled = utils.TimeDelta()
-
-        print(f'{self.worked_time=}')
-        print(f'{utils.TimeDelta()=}')
-        print(f'{self.worked_time != utils.TimeDelta()=}')
 
         self.active = self.submitted_time != utils.TimeDelta()
 
@@ -90,7 +88,8 @@ class PageSummarize(ft.Column):
         tot_worked_minus_scheduled = utils.TimeDelta()
         tot_worked_minus_submitted = utils.TimeDelta()
         tot_submitted_minus_scheduled = utils.TimeDelta()
-        for week in utils.get_weeks_for_year(settings.year):
+        # for week in utils.get_weeks_for_year(settings.year):
+        for week in settings.weeks_of_year:
             w = week.week
             wp = WeekPost(w)
             if not wp.active:

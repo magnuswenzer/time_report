@@ -111,7 +111,7 @@ class PageWeekSchedule(ft.Column):
             date.update()
 
     def update_page(self) -> None:
-        self.week_selection.goto_this_week()
+        self.week_selection.goto_active_week()
         self._on_change_week()
 
     def _get_info_from_week(self) -> list[dict]:

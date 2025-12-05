@@ -57,7 +57,7 @@ class TimeReportApp(ft.Column):
             title=self._dialog_text
         )
 
-        self._info_text = ft.Text('Väkommen!')
+        self._info_text = ft.Text('Välkommen!')
 
         self.page_log_time = PageLogTime(self)
         self.page_project = PageProject(self)

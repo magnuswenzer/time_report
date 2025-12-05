@@ -4,6 +4,7 @@ import flet as ft
 from time_report import database, controller
 from time_report import utils
 from time_report.gui import week_selection
+from time_report.gui import sum_times
 from time_report.settings import settings
 
 
@@ -17,6 +18,8 @@ class PageWeekReport(ft.Column):
         self._header_texts = []
 
         self.week_selection = week_selection.WeekSelection(callback_change_week=self._on_change_week)
+
+        self.sum_times = sum_times.SumTimes(self.main_app)
 
         columns = [ft.DataColumn(ft.Text("Projekt"))]
         for _ in range(7):
@@ -32,7 +35,12 @@ class PageWeekReport(ft.Column):
 
         self.controls = [
             self.week_selection,
-            self._table
+            ft.Row([
+                self._table,
+                ft.VerticalDivider(width=9, thickness=3),
+                self.sum_times
+            ], expand=True)
+
         ]
 
     @property
@@ -43,10 +51,14 @@ class PageWeekReport(ft.Column):
         self._update_week_days()
         self._update_header()
         self._update_hours_in_table()
+        self._update_sum_times()
         self.update()
 
     def _update_week_days(self):
         self._week_dates = utils.get_week_dates(self.week)
+
+    def _update_sum_times(self):
+        self.sum_times.update_times(self._week_dates[-1])
 
     def _update_header(self, update: bool = True):
         red_dates = utils.get_red_dates().get_dates(settings.year)
@@ -99,7 +111,7 @@ class PageWeekReport(ft.Column):
         self._table.rows = rows
 
     def update_page(self) -> None:
-        self.week_selection.goto_this_week()
+        self.week_selection.goto_active_week()
         self._on_change_week()
 
 

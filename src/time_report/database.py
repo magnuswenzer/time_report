@@ -62,8 +62,13 @@ def get_time_logs_for_day(dtime: datetime.datetime):
         return list(session.exec(statement))
 
 
-def get_project_time_logs(year: int, proj: Project, date_stop: datetime.date = None):
-    start = datetime.datetime(year, 1, 1)
+def get_project_time_logs(year: int,
+                          proj: Project,
+                          date_start: datetime.date = None,
+                          date_stop: datetime.date = None
+                          ):
+
+    start = date_start or datetime.datetime(year, 1, 1)
     end = None
     if date_stop:
         _, end = utils.get_day_range(date_stop)
@@ -176,9 +181,11 @@ def get_dates_info(date_start: datetime.date = None, date_stop: datetime.date = 
         return list(session.exec(statement.order_by(DateInfo.date)))
 
 
-def get_week_info(week_nr: int):
+def get_week_info(week_nr: int,
+                  year: int):
     with Session(engine) as session:
-        statement = select(WeekInfo).where(WeekInfo.week_number == week_nr)
+        statement = select(WeekInfo).where(WeekInfo.week_number == week_nr,
+                                           WeekInfo.year == year)
         results = session.exec(statement)
         return results.first()
 
