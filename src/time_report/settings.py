@@ -141,7 +141,7 @@ class Settings:
 
     @property
     def not_current_week_alert_bgcolor(self) -> str:
-        return self._data.get("not_current_week_alert_bgcolor", "red")
+        return self._data.get("not_current_week_alert_bgcolor", "#F54927")
 
     @not_current_week_alert_bgcolor.setter
     def not_current_week_alert_bgcolor(self, bgcolor: str) -> None:
@@ -152,7 +152,7 @@ class Settings:
 
     @property
     def submit_number_color(self) -> str:
-        return self._data.setdefault("submit_number_color", "red")
+        return self._data.setdefault("submit_number_color", "#F54927")
 
     @submit_number_color.setter
     def submit_number_color(self, color: str) -> None:
