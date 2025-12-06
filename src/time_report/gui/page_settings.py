@@ -1,7 +1,7 @@
 import datetime
 
 import flet as ft
-from time_report import database, controller
+from time_report import controller
 from time_report import utils
 from time_report.settings import settings
 
