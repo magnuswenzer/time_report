@@ -53,7 +53,7 @@ class Settings:
 
     @property
     def year(self) -> int:
-        return self._data.get("year", self._this_year)
+        return self._data.setdefault("year", self._this_year)
 
     @year.setter
     def year(self, year: int) -> None:
@@ -141,13 +141,22 @@ class Settings:
 
     @property
     def not_current_week_alert_bgcolor(self) -> str:
-        return self._data.get("not_current_week_alert_bgcolor", "red")
+        return self._data.get("not_current_week_alert_bgcolor", "#F54927")
 
     @not_current_week_alert_bgcolor.setter
     def not_current_week_alert_bgcolor(self, bgcolor: str) -> None:
         if not isinstance(bgcolor, str):
             raise ValueError("Not a valid background color")
         self._data["not_current_week_alert_bgcolor"] = bgcolor
+        self.save_settings()
+
+    @property
+    def submit_number_color(self) -> str:
+        return self._data.setdefault("submit_number_color", "#F54927")
+
+    @submit_number_color.setter
+    def submit_number_color(self, color: str) -> None:
+        self._data["submit_number_color"] = color
         self.save_settings()
 
 

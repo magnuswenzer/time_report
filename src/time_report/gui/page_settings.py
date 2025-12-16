@@ -1,8 +1,9 @@
 import datetime
 
 import flet as ft
-from time_report import database, controller
+from time_report import controller
 from time_report import utils
+from time_report.gui.color_picker import ColorButtonTemplate
 from time_report.settings import settings
 
 
@@ -19,11 +20,20 @@ class PageSettings(ft.Column):
 
         self.controls = [
             ft.Divider(),
-            self._year,
-            ft.Divider(),
-            self._get_visible_col(),
-            ft.Divider(),
-            self._get_week_range_col()
+            ft.Row([
+                ft.Column([
+                    self._year,
+                    ft.Divider(),
+                    self._get_visible_col(),
+                    ft.Divider(),
+                    self._get_week_range_col()
+                ]),
+                ft.Column([
+                    self._get_color_col(),
+                    ft.Divider(),
+                ]),
+            ])
+
             ]
         self._get_non_working_days_col()
         self._update_year_list(update=False)
@@ -72,6 +82,19 @@ class PageSettings(ft.Column):
         #     if date_info.non_working_day:
         #         print(f"{date_info.date=}: {date_info.comment}")
         return col
+
+    def _get_color_col(self) -> ft.Column:
+        self._color_submit_number = ColorButtonTemplate(label="Siffror för submit",
+                                                        color=settings.submit_number_color,
+                                                        callback=self._on_change_color_submit_number,
+                                                        )
+        return ft.Column([
+            ft.Text("Färgval"),
+            self._color_submit_number
+        ])
+
+    def _on_change_color_submit_number(self, color: str) -> None:
+        settings.submit_number_color = color
 
     def update_page(self, *args) -> None:
         pass
